@@ -1,0 +1,42 @@
+@startuml standart_abs_containers
+
+title "Диаграмма контейнеров АБС"
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+!pragma layout smetana
+
+Container_Ext(ext_sms, "СМС-шлюз", $descr="Шлюз интеграции с телеком-оператором")
+Container_Ext(ext_mail, "Почтовый сервер")
+Person_Ext(ext_manager, "Менеджер бэк-офиса")
+
+System_Boundary(abs, "АБС") {
+	Container(api, "API шлюз", "Java", "Маршрутизирует запросы")
+	Container(requests, "Сервис заявок", "Java", "Обработка заявок на открытие депозитов")
+	Container(deposits, "Сервис депозитов", "Java", "Предоставление актуальных ставок по депозитам")
+	Container(notifications, "Сервис нотификаций", "Java", "Нотификация клиентов")
+	Container(queue, "Очередь заявок", "Kafka", "Заявки по депозитам (от кол-центра и интернет-банка)")
+	ContainerDb(db, "БД", "Oracle")
+	Container(client, "Клиент АБС (legacy)", "Delphi")
+	
+	Rel(ext_manager, client, "Расчет ставок/подтверждение заявок")
+	Rel(client, db, "Чтение/запись данных по ставкам и заявкам")
+	
+	Rel(api, queue, "Заявки по депозитам", "TCP")
+	Rel(api, deposits, "Получение ставок по депозитам", "JSON/HTTPS")
+	Rel(queue, requests, "Заявки по депозитам", "TCP")
+	
+	Rel(requests, notifications, "Уведомление об открытии депозита", "JSON/HTTPS")
+	Rel(deposits, notifications, "Файл с актуальными ставками", "JSON/HTTPS")
+	Rel(notifications, ext_sms, "Уведомление об открытии депозита")
+	Rel(notifications, ext_mail, "Файл с актуальными ставками", "SMTP")
+	
+	Rel(requests, db, "Чтение/изменение данных по заявкам", "TCP")
+	Rel(deposits, db, "Чтение данных по ставкам", "TCP")
+	Rel(notifications, db, "Статус отправки нотификаций", "TCP")
+	
+	Rel(db, queue, "Изменения ставок", "Kafka Connect")
+	Rel(queue, deposits, "Изменения ставок", "JSON/HTTPS")
+}
+
+@enduml

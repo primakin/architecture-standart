@@ -1,0 +1,34 @@
+@startuml standart_bank_containers
+
+title "Диаграмма контейнеров интернет-банка"
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+!pragma layout smetana
+
+Container_Ext(ext_sms, "СМС-шлюз", $descr="Шлюз интеграции с телеком-оператором")
+Container_Ext(ext_abs, "АБС")
+
+System_Boundary(bank, "Интернет-банк") {
+	Container(api, "API шлюз", "Java", "Маршрутизирует запросы в монолит и микросервисы")
+	Container(monolith, "Монолит", "ASP.NET MVC", "Монолит на платформе подрядчика")
+	Container(requests, "Сервис заявок", "Java", "Создание заявок на открытие депозитов")
+	Container(deposits, "Сервис депозитов", "Java", "Получение актуальных ставок по депозитам от АБС")
+	Container(notifications, "Сервис нотификаций", "Java", "Нотификация клиентов")
+	ContainerDb(db, "БД", "MS SQL")
+	
+	Rel(api, monolith, "Операции по счетам", "JSON/HTTPS")
+	Rel(api, requests, "Заявки по депозитам", "JSON/HTTPS")
+	Rel(api, deposits, "Получение ставок по депозитам", "JSON/HTTPS")
+	Rel(requests, notifications, "Одноразовый код", "JSON/HTTPS")
+	Rel(requests, ext_abs, "Заявки по депозитам", "JSON/HTTPS")
+	Rel(notifications, ext_sms, "Одноразовый код")
+	Rel(deposits, ext_abs, "Получение ставок по депозитам")
+	
+	Rel(monolith, db, "Чтение/изменение данных по счетам", "TCP")
+	Rel(requests, db, "Чтение/изменение данных по заявкам", "TCP")
+	Rel(deposits, db, "Чтение/изменение данных по ставкам", "TCP")
+	Rel(notifications, db, "Статус отправки нотификаций", "TCP")
+}
+
+@enduml

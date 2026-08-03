@@ -1,0 +1,22 @@
+@startuml standart_context
+
+title "Диаграмма контекста"
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+!pragma layout smetana
+
+Person_Ext(call_manager, "Менеджер кол-центра")
+Person_Ext(back_manager, "Менеджер бэк-офиса")
+System_Ext(ext_call, "Система партнерского кол-центра")
+System_Ext(ext_mail, "Почтовый сервер партнера")
+
+System(bank_call, "Система кол-центра банка")
+System(abs, "АБС")
+
+Rel(call_manager, bank_call, "Обработка звонков")
+Rel(bank_call, abs, "Запрос актуальных ставок")
+Rel(back_manager, abs, "Расчет ставок")
+Rel(abs, ext_mail, "Передача ставок в файле")
+Rel(ext_mail, ext_call, "Передача ставок в файле")
+
+@enduml
